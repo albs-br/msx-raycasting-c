@@ -13,6 +13,9 @@ typedef uint8_t byte;
 typedef uint16_t word;
 typedef uint8_t bool;
 
+#define TRUE 	    1
+#define FALSE 	    0
+
 void cursorxy(byte x, byte y) {
   POSIT(y+1+(x<<8));
 }
@@ -120,18 +123,31 @@ void human_control(Player* p) {
 
 
 void main() {
-  int nScreenWidth = 32;
-  float fRayAngle = 0.0f;
-  float fPlayerA = 0.0f;
-  float fFOV = 0.0f;
+
+  int nScreenWidth = 32;			// Console Screen Size X (columns)
+  int nScreenHeight = 24;			// Console Screen Size Y (rows)
+  int nMapWidth = 16;				// World Dimensions
+  int nMapHeight = 16;
+  
+  float fPlayerX = 14.7f;			// Player Start Position
+  float fPlayerY = 5.09f;
+  float fPlayerA = 0.0f;			// Player Start Rotation
+  float fFOV = 3.14159f / 4.0f;			// Field of View
+  float fDepth = 16.0f;				// Maximum rendering distance
+  float fSpeed = 5.0f;				// Walking Speed
+  
+  // pre defining some vars
+  int nTestX, nTestY;
 
   INIT32();
   //putstring(0, 0, "Hello world");
 
   
   
-  while(1) { 
+  while(TRUE) { 
     for (int x = 0; x < nScreenWidth; x++) {
+      
+      
       // For each column, calculate the projected ray angle into world space
       float fRayAngle = (fPlayerA - fFOV/2.0f) + ((float)x / (float)nScreenWidth) * fFOV;
       
@@ -139,11 +155,30 @@ void main() {
       float fStepSize = 0.1f;		  // Increment size for ray casting, decrease to increase										
       float fDistanceToWall = 0.0f;	  // resolution
 
-      bool bHitWall = 0; //false;		// Set when ray hits wall block
+      bool bHitWall = FALSE; 		  // Set when ray hits wall block
 
-      float fEyeX = sinf(fRayAngle); // Unit vector for ray in player space
+      float fEyeX = sinf(fRayAngle); 	  // Unit vector for ray in player space
       float fEyeY = cosf(fRayAngle);
       
+      putstring(8, 12, "Still working"); //[debug]
+
+      // Incrementally cast ray from player, along ray angle, testing for 
+      // intersection with a block
+      while (!bHitWall && fDistanceToWall < fDepth) {
+        fDistanceToWall += fStepSize;
+        nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
+        nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
+
+        // Test if ray is out of bounds
+        if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight) {
+          bHitWall = TRUE;			// Just set distance to maximum depth
+          fDistanceToWall = fDepth;
+        }
+        else {
+        }
+      }
+      
+
     }
   }
 }
