@@ -139,8 +139,43 @@ void main() {
   // pre defining some vars
   int nTestX, nTestY;
 
+	// Create Map of world space # = wall block, . = space
+  /*
+	wchar_t* map;
+  	map += "#########.......";
+	map += "#...............";
+	map += "#.......########";
+	map += L"#..............#";
+	map += L"#......##......#";
+	map += L"#......##......#";
+	map += L"#..............#";
+	map += L"###............#";
+	map += L"##.............#";
+	map += L"#......####..###";
+	map += L"#......#.......#";
+	map += L"#......#.......#";
+	map += L"#..............#";
+	map += L"#......#########";
+	map += L"#..............#";
+	map += L"################";
+        */
+  
+  // TODO:
+  const char* map[16] = { 
+    "line 1", 
+    "line 2"
+    }; 
+
+  //const wchar_t small_char[10] = { L'锕', L'吖', L'啊', L'阿', L'呵', L'嗄', L'埃', L'哀', L'哎'}; 
+  //const char* t1 = "test\r\n1sdsd\r\ndwdw\r\nwfwfwef";
+
+  //char test = '1';
+  //test += '3';
+
+
   INIT32();
-  //putstring(0, 0, "Hello world");
+  
+  putstring(2, 1, map[1]);
 
   
   
@@ -175,6 +210,12 @@ void main() {
           fDistanceToWall = fDepth;
         }
         else {
+  	  // TODO:
+
+          // Ray is inbounds so test to see if the ray cell is a wall block
+          //if (map.c_str()[nTestX * nMapWidth + nTestY] == '#') {
+          //}
+          
         }
       }
       
