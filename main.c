@@ -29,12 +29,19 @@ void putstring(byte x, byte y, const char* str) {
     CHPUT(*str++);
   }
 }
+/*
 byte getchar(byte x, byte y) {
-  word addr = 0x1800 | (x+1) | y*32; // TODO: use variable for base address
+  word addr = 0x1800 | (x+1) | y*32; // why (x+1) ????    // TODO: use variable for base address
   byte result;
   result = RDVRM(addr);
   //LDIRMV(&result, addr, 1);
   return result;
+}
+*/
+void putchar(byte x, byte y, char ch) {
+  word addr = 0x1800 | x | y*32;
+  WRTVRM(addr, ch);
+  return;
 }
 void vsync() {
   __asm__("HALT");
@@ -45,66 +52,10 @@ void delay(int x) {
   }
 }
 
-#define CHAR(x) (x)
 
-#define COLS (LINL32)
-#define ROWS (LINLEN-5)
 
-////////// GAME DATA
-
-typedef struct {
-  byte x;
-  byte y;
-  byte dir;
-  word score;
-  char head_attr;
-  char tail_attr;
-  char collided:1;
-  char human:1;
-} Player;
-
-Player players[2];
-
-byte credits = 0;
-byte frames_per_move;
-
-#define START_SPEED 12
-#define MAX_SPEED 5
-#define MAX_SCORE 7
-
-///////////
-
-const char BOX_CHARS[8] = {
-  CHAR('+'), CHAR('+'), CHAR('+'), CHAR('+'),
-  CHAR('-'), CHAR('-'), CHAR('!'), CHAR('!') };
-
-typedef enum { D_RIGHT, D_DOWN, D_LEFT, D_UP } dir_t;
-const char DIR_X[4] = { 1, 0, -1, 0 };
-const char DIR_Y[4] = { 0, 1, 0, -1 };
-
-void init_game() {
-  memset(players, 0, sizeof(players));
-  players[0].head_attr = CHAR('1');
-  players[1].head_attr = CHAR('2');
-  players[0].tail_attr = CHAR('@');
-  players[1].tail_attr = CHAR('%');
-  frames_per_move = START_SPEED;
-}
-
-void reset_players() {
-  players[0].x = players[0].y = 5;
-  players[0].dir = D_RIGHT;
-  players[1].x = 25;
-  players[1].y = 19;
-  players[1].dir = D_LEFT;
-  players[0].collided = players[1].collided = 0;
-}
-
-void draw_player(Player* p) {
-  cputcxy(p->x, p->y, p->head_attr);
-}
-
-void human_control(Player* p) {
+/*
+void readInput(Player* p) {
   byte dir = 0xff;
   byte joystick = GTSTCK(STCK_Joy1);
   if (!p->human) return;
@@ -117,7 +68,7 @@ void human_control(Player* p) {
     p->dir = dir;
   }
 }
-
+*/
 
 //void play_game();
 
@@ -129,8 +80,9 @@ void main() {
   int nMapWidth = 16;				// World Dimensions
   int nMapHeight = 16;
   
-  float fPlayerX = 14.7f;			// Player Start Position
-  float fPlayerY = 5.09f;
+  // original position 14.7, 5.09
+  float fPlayerX = 11.0f;			// Player Start Position
+  float fPlayerY = 5.0f;
   float fPlayerA = 0.0f;			// Player Start Rotation
   float fFOV = 3.14159f / 4.0f;			// Field of View
   float fDepth = 16.0f;				// Maximum rendering distance
@@ -139,32 +91,26 @@ void main() {
   // pre defining some vars
   int nTestX, nTestY;
 
-	// Create Map of world space # = wall block, . = space
-  /*
-	wchar_t* map;
-  	map += "#########.......";
-	map += "#...............";
-	map += "#.......########";
-	map += L"#..............#";
-	map += L"#......##......#";
-	map += L"#......##......#";
-	map += L"#..............#";
-	map += L"###............#";
-	map += L"##.............#";
-	map += L"#......####..###";
-	map += L"#......#.......#";
-	map += L"#......#.......#";
-	map += L"#..............#";
-	map += L"#......#########";
-	map += L"#..............#";
-	map += L"################";
-        */
-  
-  // TODO:
+  // Create Map of world space # = wall block, . = space
   const char* map[16] = { 
-    "line 1", 
-    "line 2"
+    "#########.......",
+    "#...............",
+    "#.......########",
+    "#..............#",
+    "#......##......#",
+    "#......##......#",
+    "#..............#",
+    "###............#",
+    "##.............#",
+    "#......1##1..###",
+    "#......#.......#",
+    "#......#.......#",
+    "#..............#",
+    "#......#####1###",
+    "#..............#",
+    "################"
     }; 
+
 
   //const wchar_t small_char[10] = { L'锕', L'吖', L'啊', L'阿', L'呵', L'嗄', L'埃', L'哀', L'哎'}; 
   //const char* t1 = "test\r\n1sdsd\r\ndwdw\r\nwfwfwef";
@@ -172,16 +118,21 @@ void main() {
   //char test = '1';
   //test += '3';
 
+  
 
   INIT32();
   
-  putstring(2, 1, map[1]);
+  //putstring(2, 1, "ad");
+  //CHPUT(GetChFromMap(0, 2);
 
   
   
   while(TRUE) { 
     for (int x = 0; x < nScreenWidth; x++) {
+      // pre define vars
+      int nCeiling, nFloor;
       
+      char wallType = '#';
       
       // For each column, calculate the projected ray angle into world space
       float fRayAngle = (fPlayerA - fFOV/2.0f) + ((float)x / (float)nScreenWidth) * fFOV;
@@ -195,7 +146,7 @@ void main() {
       float fEyeX = sinf(fRayAngle); 	  // Unit vector for ray in player space
       float fEyeY = cosf(fRayAngle);
       
-      putstring(8, 12, "Still working"); //[debug]
+      //putstring(8, 12, "Still working"); //[debug]
 
       // Incrementally cast ray from player, along ray angle, testing for 
       // intersection with a block
@@ -210,16 +161,60 @@ void main() {
           fDistanceToWall = fDepth;
         }
         else {
-  	  // TODO:
-
           // Ray is inbounds so test to see if the ray cell is a wall block
-          //if (map.c_str()[nTestX * nMapWidth + nTestY] == '#') {
-          //}
-          
+          //if (map.c_str()[nTestX * nMapWidth + nTestY] == '#') { //OLD
+          if (map[nTestY][nTestX] == '#') {
+            // Ray has hit wall
+            bHitWall = TRUE;
+          } else if (map[nTestY][nTestX] == '1') {
+            // Ray has hit wall
+            bHitWall = TRUE;
+            wallType = '1';
+          }
         }
       }
       
+      // Calculate distance to ceiling and floor
+      nCeiling = (float)(nScreenHeight/2.0) - nScreenHeight / ((float)fDistanceToWall);
+      nFloor = nScreenHeight - nCeiling;
 
+      /*
+      // Shader walls based on distance
+      short nShade = ' ';
+      if (fDistanceToWall <= fDepth / 4.0f)			nShade = 0x2588;	// Very close	
+      else if (fDistanceToWall < fDepth / 3.0f)		nShade = 0x2593;
+      else if (fDistanceToWall < fDepth / 2.0f)		nShade = 0x2592;
+      else if (fDistanceToWall < fDepth)				nShade = 0x2591;
+      else											nShade = ' ';		// Too far away
+      */
+      
+      // Draw Column
+      for (int y = 0; y < nScreenHeight; y++) {
+        // Each Row
+        if(y <= nCeiling) {
+          //screen[y*nScreenWidth + x] = ' ';
+	  //putstring(x, y, " ");
+          putchar(x, y, ' ');
+        }
+        else if(y > nCeiling && y <= nFloor) {
+          //screen[y*nScreenWidth + x] = nShade;
+          //putchar(x, y, '#');
+          putchar(x, y, wallType);
+        }
+        else { // Floor
+          /*
+          // Shade floor based on distance
+          float b = 1.0f - (((float)y -nScreenHeight/2.0f) / ((float)nScreenHeight / 2.0f));
+          if (b < 0.25)		nShade = '#';
+          else if (b < 0.5)	nShade = 'x';
+          else if (b < 0.75)	nShade = '.';
+          else if (b < 0.9)	nShade = '-';
+          else				nShade = ' ';
+          screen[y*nScreenWidth + x] = nShade;
+          */
+        }
+      }
+      
     }
   }
 }
