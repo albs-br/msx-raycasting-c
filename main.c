@@ -39,7 +39,7 @@ byte getchar(byte x, byte y) {
 }
 */
 void putchar(byte x, byte y, char ch) {
-  word addr = 0x1800 | x | y*32;
+  word addr = 0x1800 | x | (y<<5);
   WRTVRM(addr, ch);
   return;
 }
@@ -84,9 +84,9 @@ void main() {
   float fPlayerX = 11.0f;			// Player Start Position
   float fPlayerY = 5.0f;
   float fPlayerA = 0.0f;			// Player Start Rotation
-  float fFOV = 3.14159f / 4.0f;			// Field of View
-  float fDepth = 16.0f;				// Maximum rendering distance
-  float fSpeed = 5.0f;				// Walking Speed
+  const float fFOV = 3.14159f / 4.0f;		// Field of View (is this equal to 45º?)
+  const float fDepth = 16.0f;				// Maximum rendering distance
+  const float fSpeed = 5.0f;				// Walking Speed
   
   // pre defining some vars
   int nTestX, nTestY;
@@ -135,25 +135,42 @@ void main() {
       char wallType = '#';
       
       // For each column, calculate the projected ray angle into world space
-      float fRayAngle = (fPlayerA - fFOV/2.0f) + ((float)x / (float)nScreenWidth) * fFOV;
+      float fRayAngle = (fPlayerA - fFOV/2.0f) + (((float)x / (float)nScreenWidth) * fFOV);
       
       // Find distance to wall
-      float fStepSize = 0.1f;		  // Increment size for ray casting, decrease to increase										
-      float fDistanceToWall = 0.0f;	  // resolution
+      float fStepSize = 0.1f;		  // Increment size for ray casting, decrease to increase resolution
+      float fDistanceToWall = 0.0f;
 
       bool bHitWall = FALSE; 		  // Set when ray hits wall block
 
       float fEyeX = sinf(fRayAngle); 	  // Unit vector for ray in player space
       float fEyeY = cosf(fRayAngle);
       
+      /*
+      float fStepX = fEyeX * fStepSize;
+      float fStepY = fEyeY * fStepSize;
+      
+      float fDistanceToWallX = 0.0f;
+      float fDistanceToWallY = 0.0f;
+      */
+      
       //putstring(8, 12, "Still working"); //[debug]
 
       // Incrementally cast ray from player, along ray angle, testing for 
       // intersection with a block
-      while (!bHitWall && fDistanceToWall < fDepth) {
+      while (!bHitWall && (fDistanceToWall < fDepth)) {
         fDistanceToWall += fStepSize;
-        nTestX = (int)(fPlayerX + fEyeX * fDistanceToWall);
-        nTestY = (int)(fPlayerY + fEyeY * fDistanceToWall);
+        nTestX = (int)(fPlayerX + (fEyeX * fDistanceToWall));
+        nTestY = (int)(fPlayerY + (fEyeY * fDistanceToWall));
+        
+	/*
+        fDistanceToWallX += fStepX;
+        nTestX = (int)(fPlayerX + fDistanceToWallX);
+	fDistanceToWallY += fStepY;
+        nTestY = (int)(fPlayerY + fDistanceToWallY);
+        */
+        
+
 
         // Test if ray is out of bounds
         if (nTestX < 0 || nTestX >= nMapWidth || nTestY < 0 || nTestY >= nMapHeight) {
@@ -163,14 +180,12 @@ void main() {
         else {
           // Ray is inbounds so test to see if the ray cell is a wall block
           //if (map.c_str()[nTestX * nMapWidth + nTestY] == '#') { //OLD
-          if (map[nTestY][nTestX] == '#') {
+          char temp = map[nTestY][nTestX];
+          if (temp == '#' || temp == '1') {
             // Ray has hit wall
             bHitWall = TRUE;
-          } else if (map[nTestY][nTestX] == '1') {
-            // Ray has hit wall
-            bHitWall = TRUE;
-            wallType = '1';
-          }
+            wallType = temp;
+          } 
         }
       }
       
