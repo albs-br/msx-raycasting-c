@@ -81,9 +81,9 @@ void main() {
   int nMapHeight = 16;
   
   // original position 14.7, 5.09
-  float fPlayerX = 11.0f;			// Player Start Position
+  float fPlayerX = 9.0f;			// Player Start Position
   float fPlayerY = 5.0f;
-  float fPlayerA = 0.0f;			// Player Start Rotation
+  float fPlayerA = 0.0F; //3.14159f; //0.0f;			// Player Start Rotation
   const float fFOV = 3.14159f / 4.0f;		// Field of View (is this equal to 45º?)
   const float fDepth = 16.0f;				// Maximum rendering distance
   const float fSpeed = 5.0f;				// Walking Speed
@@ -95,18 +95,18 @@ void main() {
   const char* map[16] = { 
     "#########.......",
     "#...............",
-    "#.......########",
+    "#.....4567######",
     "#..............#",
-    "#......##......#",
-    "#......##......#",
+    "#..............#",
+    "#..............#",
     "#..............#",
     "###............#",
     "##.............#",
-    "#......1##1..###",
+    "#......4321..###",
     "#......#.......#",
     "#......#.......#",
     "#..............#",
-    "#......#####1###",
+    "#......#####3###",
     "#..............#",
     "################"
     }; 
@@ -126,6 +126,7 @@ void main() {
   //CHPUT(GetChFromMap(0, 2);
 
   
+  // TODO; fiz bug: is plotting the columns on reverse order
   
   while(TRUE) { 
     for (int x = 0; x < nScreenWidth; x++) {
@@ -160,10 +161,11 @@ void main() {
       // intersection with a block
       while (!bHitWall && (fDistanceToWall < fDepth)) {
         fDistanceToWall += fStepSize;
+
         nTestX = (int)(fPlayerX + (fEyeX * fDistanceToWall));
         nTestY = (int)(fPlayerY + (fEyeY * fDistanceToWall));
         
-	/*
+        /*
         fDistanceToWallX += fStepX;
         nTestX = (int)(fPlayerX + fDistanceToWallX);
 	fDistanceToWallY += fStepY;
@@ -181,7 +183,7 @@ void main() {
           // Ray is inbounds so test to see if the ray cell is a wall block
           //if (map.c_str()[nTestX * nMapWidth + nTestY] == '#') { //OLD
           char temp = map[nTestY][nTestX];
-          if (temp == '#' || temp == '1') {
+          if (temp != '.') {
             // Ray has hit wall
             bHitWall = TRUE;
             wallType = temp;
